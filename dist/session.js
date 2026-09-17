@@ -20,13 +20,46 @@ export function createSenlerWidgetSession(options) {
         api = undefined;
         active?.destroy();
     };
-    const ready = loadSenlerWidget({ ...options, signal: controller.signal }).then((loaded) => {
+    const ready = loadSenlerWidget({ ...options, signal: controller.signal })
+        .then((loaded) => {
         if (controller.signal.aborted)
             throw new DOMException("SenlerWidget session was cancelled", "AbortError");
         api = loaded;
-        loaded.init(options.config);
-        return loaded;
-    }).catch((error) => {
+        return new Promise((resolve, reject) => {
+            const onAbort = () => reject(new DOMException("SenlerWidget session was cancelled", "AbortError"));
+            controller.signal.addEventListener("abort", onAbort, { once: true });
+            const removeAbortListener = () => controller.signal.removeEventListener("abort", onAbort);
+            try {
+                loaded.init({
+                    ...options.config,
+                    onReady(detail) {
+                        if (controller.signal.aborted)
+                            return;
+                        try {
+                            options.config.onReady?.(detail);
+                        }
+                        finally {
+                            removeAbortListener();
+                            if (!controller.signal.aborted)
+                                resolve(loaded);
+                        }
+                    },
+                    onError(error) {
+                        if (controller.signal.aborted)
+                            return;
+                        removeAbortListener();
+                        reject(error);
+                        options.config.onError?.(error);
+                    },
+                });
+            }
+            catch (error) {
+                removeAbortListener();
+                reject(error);
+            }
+        });
+    })
+        .catch((error) => {
         destroy();
         throw error;
     });

@@ -18,9 +18,23 @@ test('core declarations compile without React types and reject invalid public op
       assert.equal(program.getSourceFiles().some((item) => item.fileName.includes('/@types/react/')), false);
       return ts.getPreEmitDiagnostics(program);
     };
-    assert.deepEqual(compile(`import type { SenlerWidgetInitConfig } from '../dist/index.js';
-      const config: SenlerWidgetInitConfig = { channel_id: 'test', container: document.body, button_only: true };
-      window.SenlerWidget?.init(config);`), []);
+    assert.deepEqual(compile(`import type { SenlerWidgetInitConfig, SenlerWidgetInlineTextEditStatus, SenlerWidgetRuntimeMessageResult } from '../dist/index.js';
+      const config: SenlerWidgetInitConfig = { channel_id: 'test', container: document.body, button_only: true,
+        onReady(detail) { detail.channel_id; detail.button_only; },
+        onError(error) { error.code; error.retryable; error.message; } };
+      window.SenlerWidget?.init(config);
+      const renderInlineStatus = (status: SenlerWidgetInlineTextEditStatus) => status;
+      renderInlineStatus('preview_ready');
+      renderInlineStatus('message_sent');
+      // @ts-expect-error Runtime acceptance is not an inline edit status.
+      renderInlineStatus('accepted');
+      const reportMessageResult = (status: SenlerWidgetRuntimeMessageResult['status']) => status;
+      reportMessageResult('accepted');
+      reportMessageResult('preview_failed');
+      // @ts-expect-error Preview readiness is local to the inline edit controller.
+      reportMessageResult('preview_ready');
+      // @ts-expect-error Public statuses must remain a closed union.
+      reportMessageResult('unknown_status');`), []);
     const errors = compile(`import type { SenlerWidgetInitConfig } from '../dist/index.js';
       const config: SenlerWidgetInitConfig = { channel_id: 'test', invalidOption: true };`);
     assert.equal(errors.length, 1);

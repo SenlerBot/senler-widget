@@ -1,4 +1,11 @@
 /** Public host-page API. It has no dependency on React or the Senler API SDK. */
+import type { SenlerWidgetInitializationError } from "./initialization.js";
+import type {
+  WIDGET_INLINE_TEXT_EDIT_STATUS,
+  WIDGET_PAGE_ELEMENT_ACTIONS,
+  WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES,
+  WIDGET_RUNTIME_MESSAGE_RESULT_STATUS,
+} from "./contract.js";
 export type SenlerWidgetLanguage = "ru" | "en" | "auto";
 export type SenlerWidgetThemeMode = "light" | "dark" | "auto";
 export type SenlerWidgetDisplayMode = "popup" | "embedded";
@@ -96,7 +103,7 @@ export type SenlerWidgetCustomActionDefinition = {
   | { returnsResult: true; handler: (request: SenlerWidgetCustomActionRequest) => SenlerWidgetJsonValue | Promise<SenlerWidgetJsonValue> }
 );
 
-export type SenlerWidgetPageElementAction = "highlight" | "scroll_to" | "focus" | "click" | "fill" | "clear" | "select" | "toggle";
+export type SenlerWidgetPageElementAction = (typeof WIDGET_PAGE_ELEMENT_ACTIONS)[number];
 export interface SenlerWidgetPageElementActionTarget {
   context_id: string;
   role?: string;
@@ -116,7 +123,7 @@ export interface SenlerWidgetPageElementActionResult {
   event_id: string;
   attempt_id: string;
   action: SenlerWidgetPageElementAction;
-  status: "success" | "not_found" | "failed" | "blocked";
+  status: (typeof WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES)[number];
   executed_at: string;
   duration_ms?: number;
   page_context?: { url?: string; path?: string; title?: string; page_instance_id?: string };
@@ -136,18 +143,25 @@ export interface SenlerWidgetPageElementActions {
   clear?: (scope: "all" | "tool" | "selected") => void;
 }
 
+export interface SenlerWidgetReadyDetail {
+  channel_id: string;
+  display_mode: SenlerWidgetDisplayMode;
+  button_only: boolean;
+}
+
 export interface SenlerWidgetInitConfig {
   channel_id: string;
   user?: SenlerWidgetUser;
   theme?: SenlerWidgetTheme;
   features?: SenlerWidgetFeatures;
   lang?: SenlerWidgetLanguage;
-  config_source?: "local" | "remote";
   display_mode?: SenlerWidgetDisplayMode;
   button_only?: boolean;
   container?: string | Element;
   shell?: SenlerWidgetShellConfig;
   onCollapse?: (detail: SenlerWidgetCollapseDetail) => void;
+  onReady?: (detail: SenlerWidgetReadyDetail) => void;
+  onError?: (error: SenlerWidgetInitializationError) => void;
   contextProvider?: () => SenlerWidgetContextItem[];
   pageElementActions?: SenlerWidgetPageElementActions;
   customActions?: Record<string, SenlerWidgetCustomActionDefinition>;
@@ -190,7 +204,7 @@ export interface SenlerWidgetInlineTextEditPreview {
   selectedTextReplacement: string;
   summary?: string;
 }
-export type SenlerWidgetInlineTextEditStatus = "sending" | "message_sent" | "answered" | "message_send_failed" | "message_answer_failed" | "preview_ready" | "preview_failed";
+export type SenlerWidgetInlineTextEditStatus = (typeof WIDGET_INLINE_TEXT_EDIT_STATUS)[keyof typeof WIDGET_INLINE_TEXT_EDIT_STATUS];
 export type SenlerWidgetInlineTextEditScope = "selection" | "field";
 export interface SenlerWidgetInlineTextEditStatusDetail {
   status: SenlerWidgetInlineTextEditStatus;
@@ -249,7 +263,7 @@ export interface SenlerWidgetApi {
 
 export interface SenlerWidgetRuntimeMessageResult {
   request_id: string;
-  status: "accepted" | "sending" | "message_sent" | "answered" | "message_send_failed" | "message_answer_failed" | "preview_failed";
+  status: (typeof WIDGET_RUNTIME_MESSAGE_RESULT_STATUS)[keyof typeof WIDGET_RUNTIME_MESSAGE_RESULT_STATUS];
   dialog_id?: string;
   error_message?: string;
 }

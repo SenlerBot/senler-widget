@@ -5,7 +5,7 @@ a shared script loader and an optional React integration. No runtime dependencie
 The widget application is loaded from your widget host, separately from this package.
 
 ```sh
-npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v1.0.0.tar.gz
+npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.0.0.tar.gz
 ```
 
 ## Browser / TypeScript
@@ -22,6 +22,24 @@ widget.open();
 // When the host page integration is removed:
 session.destroy();
 ```
+
+`session.ready` waits for successful chat initialization and authentication. It
+rejects on the first initialization failure and destroys that session. Create a
+new session to retry (or change `retryKey` in React). Destroying a pending session
+rejects with `AbortError`. In `button_only` mode, readiness means the button is
+initialized; no chat is loaded.
+
+The optional `config.onReady(detail)` callback receives `channel_id`,
+`display_mode`, and `button_only` once per instance. `config.onError(error)`
+receives the first startup failure as a `SenlerWidgetInitializationError` with
+`code`, `message`, and `retryable`. Startup without a result times out after 90 s.
+Invalid configuration also throws synchronously from `init`.
+
+For direct `init` integrations, existing retries continue after `onError`, so
+`onReady` may follow if initialization recovers. Destroying or replacing an
+instance suppresses its later callbacks. Message errors and reconnects after
+readiness do not trigger these callbacks. Script-loading failures reject the
+loader/session Promise before `init` can run.
 
 `loadSenlerWidget({ src, timeoutMs?, nonce?, signal? })` only loads and validates
 the runtime. Use it when you own initialization yourself. It shares one script
@@ -43,6 +61,20 @@ The root declaration includes the optional global `window.SenlerWidget`. For a
 script-only integration, add `@senlerio/widget/global` to `compilerOptions.types`.
 The global is undefined until the loader is present. Imports are safe during SSR;
 loading and initialization require a browser.
+
+## Configuration priority
+
+For `theme` and `features`, explicitly supplied `init` fields override saved
+channel settings, which override defaults. Nested objects merge field by field;
+omitted fields and `undefined` inherit. Explicit `false`, a valid `0`, and empty
+arrays are preserved; arrays replace the whole list for that language. For
+example, `theme: { height: 700 }` fixes only the popup height. Other settings
+continue to inherit from the channel on each initialization.
+
+The Static / Dynamic selector and `config_source` option have been removed.
+Remove `config_source` from existing integrations before updating the runtime.
+Generated embed code contains connection settings without a full theme/features
+snapshot. Language and placement are separate options in the integration code.
 
 ## React
 
@@ -84,9 +116,13 @@ they are intentionally excluded from persistent props to avoid replaying them.
 
 ## Contract and development
 
-Version 1 requires runtime protocol 4. Upgrade the runtime and host integration
-together. The `@senlerio/widget/contract` entry exports the protocol version and
+Version 2 requires runtime protocol 4 with initialization-result callbacks
+(`onReady` and `onError`). Update both the loader and iframe before upgrading
+the host integration from version 1; earlier protocol-4 runtimes without these
+callbacks are incompatible. The `@senlerio/widget/contract` entry exports the protocol version and
 field lists used by the widget loader, checked against the TypeScript interfaces.
+The loader and iframe use the canonical package sources in this repository, so
+local contract changes can be tested before publishing a package version.
 
 Canonical sources live in `aibot-widget/packages/widget`; the public GitHub
 repository contains this package and its compiled `dist`. Run `npm ci` and

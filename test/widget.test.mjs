@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import { createElement, StrictMode, act, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import { loadSenlerWidget, createSenlerWidgetSession } from '../dist/index.js';
+import { loadSenlerWidget, createSenlerWidgetSession, SenlerWidgetInitializationError } from '../dist/index.js';
 import { SenlerWidget, useSenlerWidgetController } from '../dist/react.js';
 
 let dom;
@@ -22,11 +22,14 @@ afterEach(() => {
   delete globalThis.IS_REACT_ACT_ENVIRONMENT;
 });
 
-function runtime() {
+function runtime({ autoReady = true } = {}) {
   const calls = [];
   const api = { runtimeProtocolVersion: 4 };
   for (const name of ['init', 'open', 'close', 'toggle', 'isOpen', 'selectDialog', 'setPageContext', 'updateRuntime', 'createInlineTextEdit', 'destroy']) {
-    api[name] = (...args) => { calls.push([name, ...args]); };
+    api[name] = (...args) => {
+      calls.push([name, ...args]);
+      if (name === 'init' && autoReady) queueMicrotask(() => args[0].onReady?.({ channel_id: args[0].channel_id, display_mode: args[0].display_mode ?? 'popup', button_only: args[0].button_only === true }));
+    };
   }
   return { api, calls };
 }
@@ -105,7 +108,9 @@ test('session cancellation prevents late init and stale cleanup preserves the ne
   target.SenlerWidget = api;
   await second.ready;
   first.destroy();
-  assert.deepEqual(calls, [['init', options.config]]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], 'init');
+  assert.equal(calls[0][1].channel_id, options.config.channel_id);
   second.destroy();
   second.destroy();
   assert.equal(calls.filter(([name]) => name === 'destroy').length, 1);
@@ -132,6 +137,74 @@ test('StrictMode mounts once after asynchronous loading and destroys once on unm
   assert.equal(calls.filter(([name]) => name === 'init').length, 1);
   await act(async () => { root.unmount(); });
   assert.equal(calls.filter(([name]) => name === 'destroy').length, 1);
+});
+
+test('session readiness waits for the initialized chat and preserves the host callback', async () => {
+  const target = browser();
+  const { api, calls } = runtime({ autoReady: false });
+  target.SenlerWidget = api;
+  const details = [];
+  const config = { channel_id: 'test', onReady: (detail) => details.push(detail) };
+  const session = createSenlerWidgetSession({ src, config });
+  let resolved = false;
+  void session.ready.then(() => { resolved = true; });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(calls[0][0], 'init');
+  assert.equal(resolved, false);
+  const detail = { channel_id: 'test', display_mode: 'popup', button_only: false };
+  calls[0][1].onReady(detail);
+  assert.equal(await session.ready, api);
+  assert.deepEqual(details, [detail]);
+  assert.notEqual(calls[0][1], config);
+  session.destroy();
+});
+
+test('an initialization error rejects readiness with the same error and cleans up', async () => {
+  const target = browser();
+  const { api, calls } = runtime({ autoReady: false });
+  target.SenlerWidget = api;
+  const errors = [];
+  const session = createSenlerWidgetSession({ src, config: { channel_id: 'test', onError: (error) => errors.push(error) } });
+  const error = new SenlerWidgetInitializationError('authentication_failed', 'Access denied', false);
+  const rejected = assert.rejects(session.ready, (received) => received === error);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  calls[0][1].onError(error);
+  await rejected;
+  assert.deepEqual(errors, [error]);
+  assert.equal(calls.filter(([name]) => name === 'destroy').length, 1);
+});
+
+test('destroy cancels readiness after init and ignores a late ready callback', async () => {
+  const target = browser();
+  const { api, calls } = runtime({ autoReady: false });
+  target.SenlerWidget = api;
+  let callbacks = 0;
+  const session = createSenlerWidgetSession({ src, config: { channel_id: 'test', onReady: () => callbacks++ } });
+  const rejected = assert.rejects(session.ready, { name: 'AbortError' });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  session.destroy();
+  calls[0][1].onReady({ channel_id: 'test', display_mode: 'popup', button_only: false });
+  await rejected;
+  assert.equal(callbacks, 0);
+  assert.equal(calls.filter(([name]) => name === 'destroy').length, 1);
+});
+
+test('React remains loading after the script loads until chat initialization succeeds', async () => {
+  const target = browser();
+  const { api, calls } = runtime({ autoReady: false });
+  target.SenlerWidget = api;
+  const statuses = [];
+  function Host() {
+    const config = useMemo(() => ({ channel_id: 'test' }), []);
+    statuses.push(useSenlerWidgetController({ src, config }).status);
+    return null;
+  }
+  const root = createRoot(document.getElementById('root'));
+  await act(async () => root.render(createElement(Host)));
+  assert.equal(statuses.at(-1), 'loading');
+  await act(async () => calls[0][1].onReady({ channel_id: 'test', display_mode: 'popup', button_only: false }));
+  assert.equal(statuses.at(-1), 'ready');
+  await act(async () => root.unmount());
 });
 
 test('embedded component passes the mounted element and updates runtime without reinit', async () => {
