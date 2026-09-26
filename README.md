@@ -5,7 +5,7 @@ a shared script loader and an optional React integration. No runtime dependencie
 The widget application is loaded from your widget host, separately from this package.
 
 ```sh
-npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.0.0.tar.gz
+npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.1.0.tar.gz
 ```
 
 ## Browser / TypeScript
@@ -70,6 +70,31 @@ omitted fields and `undefined` inherit. Explicit `false`, a valid `0`, and empty
 arrays are preserved; arrays replace the whole list for that language. For
 example, `theme: { height: 700 }` fixes only the popup height. Other settings
 continue to inherit from the channel on each initialization.
+
+Set `theme.welcome_icon_url` to an absolute HTTP(S) image URL and
+`theme.welcome_icon_shape` to `"circle"` (default) or `"square"` to customize the
+welcome screen. An empty URL restores the default icon. The Cabinet uploader
+includes a square cropper with a circle/square preview; clipping uses CSS.
+
+Set `welcome: { mode: "centered_text" }` in `init` for a centered greeting, or
+`welcome: { mode: "automation_message", automation_id: "AUTOMATION_ID", node_id: "MESSAGE_STEP_UUID" }`
+to show a published automation message. Omitting `welcome` inherits channel settings.
+The pair must match the channel's default message or an additional allowed starting
+message. All allowed messages are available to every widget visitor. No greeting
+signature is needed; `user_hash` authentication remains unchanged.
+The automation must be running in the channel's project with `widget` enabled.
+The server supplies the message, buttons, attachments and sender. Displaying it
+creates no dialog or run; the first reaction follows the displayed step's reply
+and button settings. The server rechecks permission on reaction, including for
+previews displayed before a permission was removed. Invalid selections report an error.
+
+`updateRuntime({ welcome: { mode: "automation_message", automation_id, node_id } })`
+changes the greeting before the conversation starts. Existing history is preserved;
+in an active dialog the selection applies to the next new dialog. Use
+`welcome: { mode: "centered_text" }` for centered text or `welcome: null` to restore
+the channel default. Omitting the field keeps the current selection. Switching
+creates no dialog or run. `open` accepts the same options.
+See the [greeting configuration](../../../aibot-doc/docs/en/site-actions/widget-settings.md#greeting-type).
 
 The Static / Dynamic selector and `config_source` option have been removed.
 Remove `config_source` from existing integrations before updating the runtime.

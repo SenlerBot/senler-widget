@@ -39,6 +39,10 @@ export interface SenlerWidgetUser {
 }
 
 export interface SenlerWidgetTheme {
+  /** Absolute HTTP(S) URL. An empty string restores the default welcome icon. */
+  welcome_icon_url?: string;
+  /** Defaults to circle; the image is clipped with CSS. */
+  welcome_icon_shape?: "circle" | "square";
   chat_title?: SenlerWidgetLocalizedText;
   default_dialog_title?: SenlerWidgetLocalizedText;
   position?: SenlerWidgetPosition;
@@ -149,11 +153,21 @@ export interface SenlerWidgetReadyDetail {
   button_only: boolean;
 }
 
+export type SenlerWidgetWelcome =
+  | { mode: "centered_text" }
+  | {
+      mode: "automation_message";
+      automation_id: string;
+      node_id: string;
+    };
+
 export interface SenlerWidgetInitConfig {
   channel_id: string;
   user?: SenlerWidgetUser;
   theme?: SenlerWidgetTheme;
   features?: SenlerWidgetFeatures;
+  /** Overrides this instance's greeting. Omit to inherit channel settings. */
+  welcome?: SenlerWidgetWelcome;
   lang?: SenlerWidgetLanguage;
   display_mode?: SenlerWidgetDisplayMode;
   button_only?: boolean;
@@ -176,6 +190,8 @@ export interface SenlerWidgetRuntimeMessage {
   autoSend?: boolean;
 }
 export interface SenlerWidgetRuntimeConfig {
+  /** Select an allowed greeting for an unstarted dialog. null restores the channel default. */
+  welcome?: SenlerWidgetWelcome | null;
   lang?: SenlerWidgetLanguage;
   display_mode?: SenlerWidgetDisplayMode;
   theme_mode?: SenlerWidgetThemeMode;
@@ -193,7 +209,7 @@ export interface SenlerWidgetRuntimeConfig {
 }
 /** Persistent props only. Send messages and navigation commands through the API. */
 export type SenlerWidgetPersistentRuntimeConfig = Pick<SenlerWidgetRuntimeConfig,
-  "lang" | "theme_mode" | "border_radius" | "shell" | "customActions" | "customActionsLanguage" | "autoExecuteCustomActionNames" | "pageContextItems"
+  "welcome" | "lang" | "theme_mode" | "border_radius" | "shell" | "customActions" | "customActionsLanguage" | "autoExecuteCustomActionNames" | "pageContextItems"
 >;
 
 export interface SenlerWidgetInlineTextEditPreview {

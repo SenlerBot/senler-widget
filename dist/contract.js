@@ -25,12 +25,13 @@ export const WIDGET_INLINE_TEXT_EDIT_STATUS = Object.freeze({
 });
 // The loader consumes these lists; Record requires every public field exactly once.
 export const WIDGET_PUBLIC_INIT_CONFIG_FIELDS = {
-    channel_id: true, user: true, theme: true, features: true, lang: true,
+    channel_id: true, user: true, theme: true, features: true, welcome: true, lang: true,
     display_mode: true, button_only: true, container: true,
     shell: true, onCollapse: true, onReady: true, onError: true, contextProvider: true, pageElementActions: true,
     customActions: true, customActionsLanguage: true, debug: true,
 };
 export const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS = {
+    welcome: true,
     lang: true, display_mode: true, theme_mode: true, border_radius: true, shell: true,
     customActions: true, customActionsLanguage: true, autoExecuteCustomActionNames: true,
     dialogId: true, startNewDialog: true, focusInput: true, pageContextItems: true,
@@ -60,6 +61,7 @@ export const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS = {
     technical: true, user_selected: true, business_context: true, action_target: true,
 };
 export const WIDGET_PUBLIC_THEME_FIELDS = {
+    welcome_icon_url: true, welcome_icon_shape: true,
     chat_title: true, default_dialog_title: true, theme_mode: true, position: true,
     width: true, height: true, border_radius: true, shadow_enabled: true,
     welcome_message: true, empty_state_message: true, welcome_buttons: true, button: true,

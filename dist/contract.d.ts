@@ -24,6 +24,7 @@ export declare const WIDGET_PUBLIC_INIT_CONFIG_FIELDS: {
     user: true;
     theme: true;
     features: true;
+    welcome: true;
     lang: true;
     display_mode: true;
     button_only: true;
@@ -39,6 +40,7 @@ export declare const WIDGET_PUBLIC_INIT_CONFIG_FIELDS: {
     debug: true;
 };
 export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS: {
+    welcome: true;
     lang: true;
     display_mode: true;
     theme_mode: true;
@@ -103,6 +105,8 @@ export declare const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS: {
     action_target: true;
 };
 export declare const WIDGET_PUBLIC_THEME_FIELDS: {
+    welcome_icon_url: true;
+    welcome_icon_shape: true;
     chat_title: true;
     default_dialog_title: true;
     theme_mode: true;
