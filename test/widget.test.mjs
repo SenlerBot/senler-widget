@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import { createElement, StrictMode, act, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import { loadSenlerWidget, createSenlerWidgetSession, SenlerWidgetInitializationError } from '../dist/index.js';
+import { loadSenlerWidget, createSenlerWidgetSession, SenlerWidgetInitializationError, SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION } from '../dist/index.js';
 import { SenlerWidget, useSenlerWidgetController } from '../dist/react.js';
 
 let dom;
@@ -24,8 +24,8 @@ afterEach(() => {
 
 function runtime({ autoReady = true } = {}) {
   const calls = [];
-  const api = { runtimeProtocolVersion: 4 };
-  for (const name of ['init', 'open', 'close', 'toggle', 'isOpen', 'selectDialog', 'setPageContext', 'updateRuntime', 'createInlineTextEdit', 'destroy']) {
+  const api = { runtimeProtocolVersion: SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION };
+  for (const name of ['init', 'open', 'close', 'toggle', 'isOpen', 'selectDialog', 'setPageContext', 'updateRuntime', 'refreshRuntime', 'createInlineTextEdit', 'destroy']) {
     api[name] = (...args) => {
       calls.push([name, ...args]);
       if (name === 'init' && autoReady) queueMicrotask(() => args[0].onReady?.({ channel_id: args[0].channel_id, display_mode: args[0].display_mode ?? 'popup', button_only: args[0].button_only === true }));
@@ -76,7 +76,7 @@ test('timeout removes an injected script; protocol mismatch fails before init', 
   api.runtimeProtocolVersion = 3;
   target.SenlerWidget = api;
   const session = createSenlerWidgetSession({ src, config: { channel_id: 'test' } });
-  await assert.rejects(session.ready, /protocol 4/);
+  await assert.rejects(session.ready, new RegExp(`protocol ${SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION}`));
   assert.deepEqual(calls, []);
 });
 
@@ -207,18 +207,23 @@ test('React remains loading after the script loads until chat initialization suc
   await act(async () => root.unmount());
 });
 
-test('embedded component passes the mounted element and updates runtime without reinit', async () => {
+test('embedded component passes initial visibility and updates the panel without reinit', async () => {
   const target = browser();
   const { api, calls } = runtime();
   target.SenlerWidget = api;
-  const config = { channel_id: 'test' };
+  const config = { channel_id: 'test', surfaceVisible: false };
   const root = createRoot(document.getElementById('root'));
-  await act(async () => { root.render(createElement(SenlerWidget, { src, config, runtime: { theme_mode: 'dark' } })); });
+  await act(async () => { root.render(createElement(SenlerWidget, { src, config, runtime: { theme_mode: 'dark', surfaceVisible: false } })); });
   const init = calls.find(([name]) => name === 'init');
   assert.equal(init[1].container.tagName, 'DIV');
   assert.equal(init[1].display_mode, 'embedded');
-  await act(async () => { root.render(createElement(SenlerWidget, { src, config, runtime: { theme_mode: 'light' } })); });
+  assert.equal(init[1].surfaceVisible, false);
+  assert.deepEqual(calls.at(-1), ['updateRuntime', { theme_mode: 'dark', surfaceVisible: false }]);
+  await act(async () => { root.render(createElement(SenlerWidget, { src, config, runtime: { theme_mode: 'light', surfaceVisible: true } })); });
   assert.equal(calls.filter(([name]) => name === 'init').length, 1);
-  assert.deepEqual(calls.at(-1), ['updateRuntime', { theme_mode: 'light' }]);
+  assert.deepEqual(calls.at(-1), ['updateRuntime', { theme_mode: 'light', surfaceVisible: true }]);
+  await act(async () => { root.render(createElement(SenlerWidget, { src, config, runtime: { surfaceVisible: false } })); });
+  assert.equal(calls.filter(([name]) => name === 'init').length, 1);
+  assert.deepEqual(calls.at(-1), ['updateRuntime', { surfaceVisible: false }]);
   await act(async () => { root.unmount(); });
 });

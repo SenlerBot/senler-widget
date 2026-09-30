@@ -26,16 +26,20 @@ export const WIDGET_INLINE_TEXT_EDIT_STATUS = Object.freeze({
 // The loader consumes these lists; Record requires every public field exactly once.
 export const WIDGET_PUBLIC_INIT_CONFIG_FIELDS = {
     channel_id: true, user: true, theme: true, features: true, welcome: true, lang: true,
-    display_mode: true, button_only: true, container: true,
-    shell: true, onCollapse: true, onReady: true, onError: true, contextProvider: true, pageElementActions: true,
+    display_mode: true, button_only: true, container: true, surfaceVisible: true,
+    shell: true, onCollapse: true, onReady: true, onError: true, contextProvider: true, resolveRuntime: true, pageElementActions: true,
     customActions: true, customActionsLanguage: true, debug: true,
 };
 export const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS = {
+    surfaceVisible: true,
     welcome: true,
     lang: true, display_mode: true, theme_mode: true, border_radius: true, shell: true,
     customActions: true, customActionsLanguage: true, autoExecuteCustomActionNames: true,
     dialogId: true, startNewDialog: true, focusInput: true, pageContextItems: true,
     contextItems: true, message: true,
+};
+export const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS = {
+    welcome: true, lang: true, theme_mode: true, border_radius: true, shell: true,
 };
 export const WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS = {
     text: true, requestId: true, startNewDialog: true, autoSend: true,
@@ -51,11 +55,11 @@ export const WIDGET_PUBLIC_CUSTOM_ACTION_FIELDS = {
     title: true, description: true, payloadSchema: true, returnsResult: true, handler: true,
 };
 export const WIDGET_PUBLIC_PAGE_ELEMENT_ACTION_FIELDS = {
-    execute: true, clear: true,
+    execute: true, clear: true, navigate: true,
 };
 export const WIDGET_PUBLIC_API_INSTANCE_METHODS = {
     open: true, close: true, toggle: true, isOpen: true, destroy: true,
-    selectDialog: true, setPageContext: true, updateRuntime: true, createInlineTextEdit: true,
+    selectDialog: true, setPageContext: true, updateRuntime: true, refreshRuntime: true, createInlineTextEdit: true,
 };
 export const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS = {
     technical: true, user_selected: true, business_context: true, action_target: true,
@@ -71,6 +75,7 @@ export const WIDGET_PUBLIC_FEATURE_FIELDS = {
 };
 export const WIDGET_PUBLIC_INIT_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_INIT_CONFIG_FIELDS));
 export const WIDGET_PUBLIC_RUNTIME_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS));
+export const WIDGET_RESOLVED_RUNTIME_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS));
 export const WIDGET_PUBLIC_RUNTIME_MESSAGE_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS));
 export const WIDGET_PUBLIC_USER_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_USER_FIELDS));
 export const WIDGET_PUBLIC_SHELL_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_SHELL_FIELDS));

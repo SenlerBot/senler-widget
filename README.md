@@ -5,7 +5,7 @@ a shared script loader and an optional React integration. No runtime dependencie
 The widget application is loaded from your widget host, separately from this package.
 
 ```sh
-npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.1.0.tar.gz
+npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.2.0.tar.gz
 ```
 
 ## Browser / TypeScript
@@ -88,6 +88,24 @@ creates no dialog or run; the first reaction follows the displayed step's reply
 and button settings. The server rechecks permission on reaction, including for
 previews displayed before a permission was removed. Invalid selections report an error.
 
+Use synchronous `init.resolveRuntime(context)` to choose `welcome`, `lang`,
+`theme_mode`, `border_radius`, and `shell` before the first greeting and whenever
+visitor/dialog facts change. `SenlerWidgetRuntimeContext` contains `channelId`,
+`visitor: { isNew, identityVerified }`, `dialogs: { count }`, and
+`currentDialog: { id } | null`. The count covers all accessible dialogs in this
+channel, independently of search/pagination. Opening a new chat keeps its ID
+null until communication creates a real dialog.
+
+Return `SenlerWidgetResolvedRuntimeConfig`: each result replaces the previous
+computed layer over channel/init/manual runtime settings. Omitted fields inherit
+the current base; `{}` removes all computed overrides. For a greeting only when
+no dialogs exist, use `context.dialogs.count === 0`. Deleting all dialogs makes
+that condition true again. Call `api.refreshRuntime()` after site variables
+change. In React, keep `config` stable and read changing host values through refs.
+Errors, invalid results, and a 3-second response timeout restore base settings
+with a console warning. Promises and commands are unsupported; without a resolver
+or in `button_only` mode, refreshing is a no-op.
+
 `updateRuntime({ welcome: { mode: "automation_message", automation_id, node_id } })`
 changes the greeting before the conversation starts. Existing history is preserved;
 in an active dialog the selection applies to the next new dialog. Use
@@ -139,7 +157,20 @@ The `runtime` prop updates persistent settings without reinitialization. Send
 messages and navigation commands through `api.open()` / `api.updateRuntime()`;
 they are intentionally excluded from persistent props to avoid replaying them.
 
+If your site hides an embedded widget inside its own panel or tab, pass
+`surfaceVisible: false` in `init` and report changes with
+`api.updateRuntime({ surfaceVisible: panelIsVisible })`. This controls read
+receipts, not the host's layout. The widget marks messages read only while
+its surface and browser tab are visible. Built-in popup open/close is handled
+automatically. Authentication, explicit background requests and WebMCP remain
+available while the panel is hidden.
+
 ## Contract and development
+
+Version 2.2 adds `surfaceVisible`, `resolveRuntime` / `refreshRuntime`, and
+`pageElementActions.navigate`. These features require the matching loader and
+iframe implementation; updating the SDK package alone does not update the
+hosted widget runtime.
 
 Version 2 requires runtime protocol 4 with initialization-result callbacks
 (`onReady` and `onError`). Update both the loader and iframe before upgrading

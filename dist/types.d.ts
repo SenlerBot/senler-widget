@@ -128,6 +128,8 @@ export type SenlerWidgetPageElementActionPayload = {
     attempt_id: string;
     action: SenlerWidgetPageElementAction;
     value?: string;
+    /** Set by the history UI for an explicit user request, never by the agent. */
+    user_initiated?: boolean;
 } & ({
     target: SenlerWidgetPageElementActionTarget;
     target_chain?: undefined;
@@ -162,6 +164,12 @@ export interface SenlerWidgetPageElementActionResult {
 export interface SenlerWidgetPageElementActions {
     execute?: (payload: SenlerWidgetPageElementActionPayload) => SenlerWidgetPageElementActionResult | null | Promise<SenlerWidgetPageElementActionResult | null>;
     clear?: (scope: "all" | "tool" | "selected") => void;
+    /** Host-owned preparation for a user clicking Show on page. Call execute after layout changes. */
+    navigate?: (payload: SenlerWidgetPageElementActionPayload, context: {
+        element: Element | null;
+        signal: AbortSignal;
+        execute: () => Promise<SenlerWidgetPageElementActionResult>;
+    }) => Promise<SenlerWidgetPageElementActionResult>;
 }
 export interface SenlerWidgetReadyDetail {
     channel_id: string;
@@ -175,6 +183,27 @@ export type SenlerWidgetWelcome = {
     automation_id: string;
     node_id: string;
 };
+/** Facts about this visitor in this channel, available after server initialization. */
+export interface SenlerWidgetRuntimeContext {
+    readonly channelId: string;
+    readonly visitor: {
+        /** The visitor record was created during this initialization. */
+        readonly isNew: boolean;
+        readonly identityVerified: boolean;
+    };
+    readonly dialogs: {
+        readonly count: number;
+    };
+    /** null until a real dialog is selected or created; a new chat has no ID. */
+    readonly currentDialog: {
+        readonly id: string;
+    } | null;
+}
+/** A replacement override layer. Omitted fields inherit the current base settings. */
+export type SenlerWidgetResolvedRuntimeConfig = Pick<SenlerWidgetRuntimeConfig, "welcome" | "lang" | "theme_mode" | "border_radius" | "shell">;
+export type SenlerWidgetRuntimeResolver = (context: SenlerWidgetRuntimeContext) => SenlerWidgetResolvedRuntimeConfig & {
+    [Key in Exclude<keyof SenlerWidgetRuntimeConfig, keyof SenlerWidgetResolvedRuntimeConfig>]?: never;
+};
 export interface SenlerWidgetInitConfig {
     channel_id: string;
     user?: SenlerWidgetUser;
@@ -186,11 +215,15 @@ export interface SenlerWidgetInitConfig {
     display_mode?: SenlerWidgetDisplayMode;
     button_only?: boolean;
     container?: string | Element;
+    /** Whether the host shows the widget's container. Defaults to true; does not open the panel. */
+    surfaceVisible?: boolean;
     shell?: SenlerWidgetShellConfig;
     onCollapse?: (detail: SenlerWidgetCollapseDetail) => void;
     onReady?: (detail: SenlerWidgetReadyDetail) => void;
     onError?: (error: SenlerWidgetInitializationError) => void;
     contextProvider?: () => SenlerWidgetContextItem[];
+    /** Synchronous presentation settings, evaluated before the greeting and on context changes. */
+    resolveRuntime?: SenlerWidgetRuntimeResolver;
     pageElementActions?: SenlerWidgetPageElementActions;
     customActions?: Record<string, SenlerWidgetCustomActionDefinition>;
     customActionsLanguage?: "ru" | "en";
@@ -203,6 +236,8 @@ export interface SenlerWidgetRuntimeMessage {
     autoSend?: boolean;
 }
 export interface SenlerWidgetRuntimeConfig {
+    /** Report a host-controlled panel/tab's visibility without reinitializing or pausing the widget. */
+    surfaceVisible?: boolean;
     /** Select an allowed greeting for an unstarted dialog. null restores the channel default. */
     welcome?: SenlerWidgetWelcome | null;
     lang?: SenlerWidgetLanguage;
@@ -221,7 +256,7 @@ export interface SenlerWidgetRuntimeConfig {
     message?: SenlerWidgetRuntimeMessage;
 }
 /** Persistent props only. Send messages and navigation commands through the API. */
-export type SenlerWidgetPersistentRuntimeConfig = Pick<SenlerWidgetRuntimeConfig, "welcome" | "lang" | "theme_mode" | "border_radius" | "shell" | "customActions" | "customActionsLanguage" | "autoExecuteCustomActionNames" | "pageContextItems">;
+export type SenlerWidgetPersistentRuntimeConfig = Pick<SenlerWidgetRuntimeConfig, "surfaceVisible" | "welcome" | "lang" | "theme_mode" | "border_radius" | "shell" | "customActions" | "customActionsLanguage" | "autoExecuteCustomActionNames" | "pageContextItems">;
 export interface SenlerWidgetInlineTextEditPreview {
     fieldId: string;
     sourceText: string;
@@ -284,6 +319,8 @@ export interface SenlerWidgetApi {
     selectDialog(dialogId: string): void;
     setPageContext(items: SenlerWidgetContextItem[]): void;
     updateRuntime(config: SenlerWidgetRuntimeConfig): void;
+    /** Re-evaluate resolveRuntime after host-page conditions change. */
+    refreshRuntime(): void;
     createInlineTextEdit(config: SenlerWidgetInlineTextEditConfig): SenlerWidgetInlineTextEditController;
     destroy(): void;
 }

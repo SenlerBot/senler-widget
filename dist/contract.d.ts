@@ -29,17 +29,20 @@ export declare const WIDGET_PUBLIC_INIT_CONFIG_FIELDS: {
     display_mode: true;
     button_only: true;
     container: true;
+    surfaceVisible: true;
     shell: true;
     onCollapse: true;
     onReady: true;
     onError: true;
     contextProvider: true;
+    resolveRuntime: true;
     pageElementActions: true;
     customActions: true;
     customActionsLanguage: true;
     debug: true;
 };
 export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS: {
+    surfaceVisible: true;
     welcome: true;
     lang: true;
     display_mode: true;
@@ -55,6 +58,13 @@ export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS: {
     pageContextItems: true;
     contextItems: true;
     message: true;
+};
+export declare const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS: {
+    welcome: true;
+    lang: true;
+    theme_mode: true;
+    border_radius: true;
+    shell: true;
 };
 export declare const WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS: {
     text: true;
@@ -86,6 +96,7 @@ export declare const WIDGET_PUBLIC_CUSTOM_ACTION_FIELDS: {
 export declare const WIDGET_PUBLIC_PAGE_ELEMENT_ACTION_FIELDS: {
     execute: true;
     clear: true;
+    navigate: true;
 };
 export declare const WIDGET_PUBLIC_API_INSTANCE_METHODS: {
     open: true;
@@ -96,6 +107,7 @@ export declare const WIDGET_PUBLIC_API_INSTANCE_METHODS: {
     selectDialog: true;
     setPageContext: true;
     updateRuntime: true;
+    refreshRuntime: true;
     createInlineTextEdit: true;
 };
 export declare const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS: {
@@ -129,6 +141,7 @@ export declare const WIDGET_PUBLIC_FEATURE_FIELDS: {
 };
 export declare const WIDGET_PUBLIC_INIT_CONFIG_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_KEYS: readonly string[];
+export declare const WIDGET_RESOLVED_RUNTIME_CONFIG_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_RUNTIME_MESSAGE_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_USER_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_SHELL_KEYS: readonly string[];
