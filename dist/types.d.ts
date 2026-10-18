@@ -69,6 +69,17 @@ export interface SenlerWidgetTheme {
     height?: number;
     border_radius?: number;
     theme_mode?: SenlerWidgetThemeMode;
+    /** Optional HEX window colors. Omitted or built-in values keep the original palette. */
+    colors?: {
+        light?: {
+            background?: string;
+            accent?: string;
+        };
+        dark?: {
+            background?: string;
+            accent?: string;
+        };
+    };
     shadow_enabled?: boolean;
 }
 export interface SenlerWidgetFeatures {

@@ -117,6 +117,7 @@ export declare const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS: {
     action_target: true;
 };
 export declare const WIDGET_PUBLIC_THEME_FIELDS: {
+    colors: true;
     welcome_icon_url: true;
     welcome_icon_shape: true;
     chat_title: true;

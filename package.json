@@ -1,6 +1,6 @@
 {
   "name": "@senlerio/widget",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Typed Senler chat widget SDK with an optional React integration",
   "license": "MIT",
   "type": "module",

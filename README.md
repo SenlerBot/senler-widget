@@ -5,7 +5,7 @@ a shared script loader and an optional React integration. No runtime dependencie
 The widget application is loaded from your widget host, separately from this package.
 
 ```sh
-npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.2.0.tar.gz
+npm install @senlerio/widget@https://github.com/SenlerBot/senler-widget/archive/refs/tags/v2.3.0.tar.gz
 ```
 
 ## Browser / TypeScript
@@ -70,6 +70,10 @@ omitted fields and `undefined` inherit. Explicit `false`, a valid `0`, and empty
 arrays are preserved; arrays replace the whole list for that language. For
 example, `theme: { height: 700 }` fixes only the popup height. Other settings
 continue to inherit from the channel on each initialization.
+
+Set `theme.colors.light` and `theme.colors.dark` with optional HEX `background`
+and `accent` values to customize the chat window palette. Omitted or built-in
+values keep the original palette.
 
 Set `theme.welcome_icon_url` to an absolute HTTP(S) image URL and
 `theme.welcome_icon_shape` to `"circle"` (default) or `"square"` to customize the

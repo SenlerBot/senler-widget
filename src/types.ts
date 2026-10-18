@@ -9,18 +9,26 @@ import type {
 export type SenlerWidgetLanguage = "ru" | "en" | "auto";
 export type SenlerWidgetThemeMode = "light" | "dark" | "auto";
 export type SenlerWidgetDisplayMode = "popup" | "embedded";
-export type SenlerWidgetPosition = "bottom-right" | "bottom-left" | "top-right" | "top-left";
+export type SenlerWidgetPosition =
+  "bottom-right" | "bottom-left" | "top-right" | "top-left";
 export type SenlerWidgetJsonPrimitive = string | number | boolean | null;
-export type SenlerWidgetJsonValue = SenlerWidgetJsonPrimitive | SenlerWidgetJsonValue[] | SenlerWidgetJsonObject;
+export type SenlerWidgetJsonValue =
+  SenlerWidgetJsonPrimitive | SenlerWidgetJsonValue[] | SenlerWidgetJsonObject;
 export type SenlerWidgetJsonObject = { [key: string]: SenlerWidgetJsonValue };
 export type SenlerWidgetLocalizedText = { ru?: string; en?: string };
-export type SenlerWidgetContextItemRole = "technical" | "user_selected" | "business_context" | "action_target";
+export type SenlerWidgetContextItemRole =
+  "technical" | "user_selected" | "business_context" | "action_target";
 
 export interface SenlerWidgetContextItem {
   id: string;
   kind: string;
   role: SenlerWidgetContextItemRole;
-  display: { label: string; subtitle?: string; icon?: string; avatar_url?: string };
+  display: {
+    label: string;
+    subtitle?: string;
+    icon?: string;
+    avatar_url?: string;
+  };
   ref?: SenlerWidgetJsonObject;
   snapshot?: SenlerWidgetJsonObject;
   payload?: SenlerWidgetJsonObject;
@@ -58,6 +66,11 @@ export interface SenlerWidgetTheme {
   height?: number;
   border_radius?: number;
   theme_mode?: SenlerWidgetThemeMode;
+  /** Optional HEX window colors. Omitted or built-in values keep the original palette. */
+  colors?: {
+    light?: { background?: string; accent?: string };
+    dark?: { background?: string; accent?: string };
+  };
   shadow_enabled?: boolean;
 }
 
@@ -103,11 +116,20 @@ export type SenlerWidgetCustomActionDefinition = {
   description?: string;
   payloadSchema?: SenlerWidgetCustomActionPayloadSchema;
 } & (
-  | { returnsResult?: false; handler: (detail: SenlerWidgetCustomActionDetail) => void }
-  | { returnsResult: true; handler: (request: SenlerWidgetCustomActionRequest) => SenlerWidgetJsonValue | Promise<SenlerWidgetJsonValue> }
+  | {
+      returnsResult?: false;
+      handler: (detail: SenlerWidgetCustomActionDetail) => void;
+    }
+  | {
+      returnsResult: true;
+      handler: (
+        request: SenlerWidgetCustomActionRequest,
+      ) => SenlerWidgetJsonValue | Promise<SenlerWidgetJsonValue>;
+    }
 );
 
-export type SenlerWidgetPageElementAction = (typeof WIDGET_PAGE_ELEMENT_ACTIONS)[number];
+export type SenlerWidgetPageElementAction =
+  (typeof WIDGET_PAGE_ELEMENT_ACTIONS)[number];
 export interface SenlerWidgetPageElementActionTarget {
   context_id: string;
   role?: string;
@@ -132,7 +154,12 @@ export interface SenlerWidgetPageElementActionResult {
   status: (typeof WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES)[number];
   executed_at: string;
   duration_ms?: number;
-  page_context?: { url?: string; path?: string; title?: string; page_instance_id?: string };
+  page_context?: {
+    url?: string;
+    path?: string;
+    title?: string;
+    page_instance_id?: string;
+  };
   match?: {
     method?: string;
     matched_count?: number;
@@ -145,14 +172,22 @@ export interface SenlerWidgetPageElementActionResult {
   error_message?: string;
 }
 export interface SenlerWidgetPageElementActions {
-  execute?: (payload: SenlerWidgetPageElementActionPayload) => SenlerWidgetPageElementActionResult | null | Promise<SenlerWidgetPageElementActionResult | null>;
+  execute?: (
+    payload: SenlerWidgetPageElementActionPayload,
+  ) =>
+    | SenlerWidgetPageElementActionResult
+    | null
+    | Promise<SenlerWidgetPageElementActionResult | null>;
   clear?: (scope: "all" | "tool" | "selected") => void;
   /** Host-owned preparation for a user clicking Show on page. Call execute after layout changes. */
-  navigate?: (payload: SenlerWidgetPageElementActionPayload, context: {
-    element: Element | null;
-    signal: AbortSignal;
-    execute: () => Promise<SenlerWidgetPageElementActionResult>;
-  }) => Promise<SenlerWidgetPageElementActionResult>;
+  navigate?: (
+    payload: SenlerWidgetPageElementActionPayload,
+    context: {
+      element: Element | null;
+      signal: AbortSignal;
+      execute: () => Promise<SenlerWidgetPageElementActionResult>;
+    },
+  ) => Promise<SenlerWidgetPageElementActionResult>;
 }
 
 export interface SenlerWidgetReadyDetail {
@@ -183,17 +218,20 @@ export interface SenlerWidgetRuntimeContext {
 }
 
 /** A replacement override layer. Omitted fields inherit the current base settings. */
-export type SenlerWidgetResolvedRuntimeConfig = Pick<SenlerWidgetRuntimeConfig,
+export type SenlerWidgetResolvedRuntimeConfig = Pick<
+  SenlerWidgetRuntimeConfig,
   "welcome" | "lang" | "theme_mode" | "border_radius" | "shell"
 >;
 export type SenlerWidgetRuntimeResolver = (
   context: SenlerWidgetRuntimeContext,
 ) => SenlerWidgetResolvedRuntimeConfig & {
   // Reject commands even when the callback also returns valid settings.
-  [Key in Exclude<
-    keyof SenlerWidgetRuntimeConfig,
-    keyof SenlerWidgetResolvedRuntimeConfig
-  >]?: never;
+  [
+    Key in Exclude<
+      keyof SenlerWidgetRuntimeConfig,
+      keyof SenlerWidgetResolvedRuntimeConfig
+    >
+  ]?: never;
 };
 
 export interface SenlerWidgetInitConfig {
@@ -249,8 +287,18 @@ export interface SenlerWidgetRuntimeConfig {
   message?: SenlerWidgetRuntimeMessage;
 }
 /** Persistent props only. Send messages and navigation commands through the API. */
-export type SenlerWidgetPersistentRuntimeConfig = Pick<SenlerWidgetRuntimeConfig,
-  "surfaceVisible" | "welcome" | "lang" | "theme_mode" | "border_radius" | "shell" | "customActions" | "customActionsLanguage" | "autoExecuteCustomActionNames" | "pageContextItems"
+export type SenlerWidgetPersistentRuntimeConfig = Pick<
+  SenlerWidgetRuntimeConfig,
+  | "surfaceVisible"
+  | "welcome"
+  | "lang"
+  | "theme_mode"
+  | "border_radius"
+  | "shell"
+  | "customActions"
+  | "customActionsLanguage"
+  | "autoExecuteCustomActionNames"
+  | "pageContextItems"
 >;
 
 export interface SenlerWidgetInlineTextEditPreview {
@@ -261,7 +309,8 @@ export interface SenlerWidgetInlineTextEditPreview {
   selectedTextReplacement: string;
   summary?: string;
 }
-export type SenlerWidgetInlineTextEditStatus = (typeof WIDGET_INLINE_TEXT_EDIT_STATUS)[keyof typeof WIDGET_INLINE_TEXT_EDIT_STATUS];
+export type SenlerWidgetInlineTextEditStatus =
+  (typeof WIDGET_INLINE_TEXT_EDIT_STATUS)[keyof typeof WIDGET_INLINE_TEXT_EDIT_STATUS];
 export type SenlerWidgetInlineTextEditScope = "selection" | "field";
 export interface SenlerWidgetInlineTextEditStatusDetail {
   status: SenlerWidgetInlineTextEditStatus;
@@ -298,7 +347,9 @@ export interface SenlerWidgetInlineTextEditOpenChatRequest {
   scope?: SenlerWidgetInlineTextEditScope;
 }
 export interface SenlerWidgetInlineTextEditController {
-  ask(request: string | SenlerWidgetInlineTextEditAskRequest): string | undefined;
+  ask(
+    request: string | SenlerWidgetInlineTextEditAskRequest,
+  ): string | undefined;
   openChat(request?: SenlerWidgetInlineTextEditOpenChatRequest): void;
   getDialogId(): string | null;
   destroy(): void;
@@ -316,7 +367,9 @@ export interface SenlerWidgetApi {
   updateRuntime(config: SenlerWidgetRuntimeConfig): void;
   /** Re-evaluate resolveRuntime after host-page conditions change. */
   refreshRuntime(): void;
-  createInlineTextEdit(config: SenlerWidgetInlineTextEditConfig): SenlerWidgetInlineTextEditController;
+  createInlineTextEdit(
+    config: SenlerWidgetInlineTextEditConfig,
+  ): SenlerWidgetInlineTextEditController;
   destroy(): void;
 }
 
