@@ -15,7 +15,7 @@ const loads = new WeakMap<Window, { src: string; promise: Promise<SenlerWidgetAp
 export function assertSenlerWidgetRuntime(value: unknown): asserts value is SenlerWidgetApi {
   if (typeof value !== "object" || value === null
     || Reflect.get(value, "runtimeProtocolVersion") !== SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION
-    || ["init", ...WIDGET_PUBLIC_API_METHOD_NAMES].some((key) => typeof Reflect.get(value, key) !== "function")) {
+    || ["init", "create", ...WIDGET_PUBLIC_API_METHOD_NAMES].some((key) => typeof Reflect.get(value, key) !== "function")) {
     throw new Error(`Incompatible SenlerWidget runtime; expected protocol ${SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION}`);
   }
 }

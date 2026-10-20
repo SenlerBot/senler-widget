@@ -1,14 +1,12 @@
 import { loadSenlerWidget, type LoadSenlerWidgetOptions } from "./loader.js";
-import type { SenlerWidgetApi, SenlerWidgetInitConfig } from "./types.js";
-
-const ownerKey = Symbol.for("@senlerio/widget/session-owner");
+import type { SenlerWidgetInstanceApi, SenlerWidgetInitConfig } from "./types.js";
 
 export interface SenlerWidgetSession {
-  ready: Promise<SenlerWidgetApi>;
+  ready: Promise<SenlerWidgetInstanceApi>;
   destroy(): void;
 }
 
-/** One session owns the page's singleton. A stale cleanup cannot destroy a newer session. */
+/** A session owns only the instance it creates; the loader script is shared. */
 export function createSenlerWidgetSession(
   options: Omit<LoadSenlerWidgetOptions, "signal"> & {
     config: SenlerWidgetInitConfig;
@@ -16,17 +14,10 @@ export function createSenlerWidgetSession(
 ): SenlerWidgetSession {
   if (typeof window === "undefined")
     throw new Error("SenlerWidget requires a browser");
-  const target = window;
-  if (Reflect.get(target, ownerKey))
-    throw new Error("This page already has an active SenlerWidget session");
-  const owner = {};
-  Reflect.set(target, ownerKey, owner);
   const controller = new AbortController();
-  let api: SenlerWidgetApi | undefined;
+  let api: SenlerWidgetInstanceApi | undefined;
   const destroy = () => {
     controller.abort();
-    if (Reflect.get(target, ownerKey) !== owner) return;
-    Reflect.deleteProperty(target, ownerKey);
     const active = api;
     api = undefined;
     active?.destroy();
@@ -38,8 +29,7 @@ export function createSenlerWidgetSession(
           "SenlerWidget session was cancelled",
           "AbortError",
         );
-      api = loaded;
-      return new Promise<SenlerWidgetApi>((resolve, reject) => {
+      return new Promise<SenlerWidgetInstanceApi>((resolve, reject) => {
         const onAbort = () =>
           reject(
             new DOMException(
@@ -51,7 +41,7 @@ export function createSenlerWidgetSession(
         const removeAbortListener = () =>
           controller.signal.removeEventListener("abort", onAbort);
         try {
-          loaded.init({
+          api = loaded.create({
             ...options.config,
             onReady(detail) {
               if (controller.signal.aborted) return;
@@ -59,7 +49,8 @@ export function createSenlerWidgetSession(
                 options.config.onReady?.(detail);
               } finally {
                 removeAbortListener();
-                if (!controller.signal.aborted) resolve(loaded);
+                // Readiness may be synchronous in a host runtime.
+                if (!controller.signal.aborted) queueMicrotask(() => api && resolve(api));
               }
             },
             onError(error) {

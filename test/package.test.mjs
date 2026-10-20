@@ -16,9 +16,9 @@ test('core declarations compile without React types and reject invalid public op
         noEmit: true, types: [], skipLibCheck: false,
       });
       assert.equal(program.getSourceFiles().some((item) => item.fileName.includes('/@types/react/')), false);
-      return ts.getPreEmitDiagnostics(program);
+      return ts.getPreEmitDiagnostics(program).map(item => ts.flattenDiagnosticMessageText(item.messageText, "\n"));
     };
-    assert.deepEqual(compile(`import type { SenlerWidgetInitConfig, SenlerWidgetInlineTextEditStatus, SenlerWidgetRuntimeMessageResult, SenlerWidgetPersistentRuntimeConfig, SenlerWidgetRuntimeContext, SenlerWidgetResolvedRuntimeConfig } from '../dist/index.js';
+    assert.deepEqual(compile(`import type { SenlerWidgetInitConfig, SenlerWidgetSettings, SenlerWidgetRuntimeContext, SenlerWidgetResolvedRuntimeConfig } from '../dist/index.js';
       const resolveRuntime = (context: SenlerWidgetRuntimeContext): SenlerWidgetResolvedRuntimeConfig => ({
         welcome: { mode: 'centered_text' }, shell: { collapse_button: context.dialogs.count > 0 }
       });
@@ -35,36 +35,65 @@ test('core declarations compile without React types and reject invalid public op
         } } };
       window.SenlerWidget?.init(config);
       window.SenlerWidget?.refreshRuntime();
-      const runtime: SenlerWidgetPersistentRuntimeConfig = { surfaceVisible: true };
-      window.SenlerWidget?.updateRuntime(runtime);
+      const runtime: SenlerWidgetSettings = { surfaceVisible: true };
+      window.SenlerWidget?.configure(runtime);
       // @ts-expect-error Visibility must be a boolean in both public config paths.
       config.surfaceVisible = 'false';
       // @ts-expect-error Runtime visibility must be a boolean.
-      window.SenlerWidget?.updateRuntime({ surfaceVisible: 'false' });
-      const renderInlineStatus = (status: SenlerWidgetInlineTextEditStatus) => status;
-      renderInlineStatus('preview_ready');
-      renderInlineStatus('message_sent');
-      // @ts-expect-error Runtime acceptance is not an inline edit status.
-      renderInlineStatus('accepted');
-      const reportMessageResult = (status: SenlerWidgetRuntimeMessageResult['status']) => status;
-      reportMessageResult('accepted');
-      reportMessageResult('preview_failed');
-      // @ts-expect-error Preview readiness is local to the inline edit controller.
-      reportMessageResult('preview_ready');
-      // @ts-expect-error Public statuses must remain a closed union.
-      reportMessageResult('unknown_status');`), []);
+      window.SenlerWidget?.configure({ surfaceVisible: 'false' });
+      window.SenlerWidget?.ask({ text: 'Hello', onAnswer(answer) { answer.hasMore; answer.respondersTotal; } });
+      window.SenlerWidget?.ask({ text: 'Stream', onChunk(chunk) {
+        const index: number = chunk.index;
+        const ids: string[] = [chunk.requestId, chunk.dialogId, chunk.agentId, chunk.streamId, chunk.text];
+      } });
+      // @ts-expect-error Chunk callbacks receive a typed fragment.
+      window.SenlerWidget?.ask({ text: 'Stream', onChunk: (text: string) => {} });
+      window.SenlerWidget?.startNewDialog({ contextItems: [], focusInput: true });
+      window.SenlerWidget?.create({ channel_id: 'test', headless: true });
+      window.SenlerWidget?.getMessages({ dialogId: 'id', limit: 20 });
+      window.SenlerWidget?.getScheduledActions({ dialogId: 'id', cursor: 'next' }).then(page => {
+        const enabled: boolean = page.enabled;
+        const status: 'pending' | 'processing' = page.items[0].status;
+      });
+      window.SenlerWidget?.cancelScheduledAction({ dialogId: 'id', actionId: 'timer' });
+      window.SenlerWidget?.subscribeDialog({ dialogId: 'id', onError(error) { error.code; },
+        onUpdate(update) {
+          if (update.type === 'snapshot') {
+            const revision: number = update.messages.items[0].version;
+            const queueId: string | undefined = update.state.pending[0]?.id;
+          }
+          if (update.type === 'chunk') { const fragment: string = update.text; }
+          if (update.type === 'streamEnded') {
+            const request: string | undefined = update.requestId;
+            const status: 'completed' | 'failed' | 'skipped' | 'scheduled' = update.status;
+          }
+        }
+      });
+      // @ts-expect-error A subscription must handle terminal failures.
+      window.SenlerWidget?.subscribeDialog({ dialogId: 'id', onUpdate() {} });
+      // @ts-expect-error Headless is a boolean.
+      window.SenlerWidget?.create({ channel_id: 'test', headless: 'yes' });
+      window.SenlerWidget?.selectDialog('discussion', { contextItems: [], focusInput: true });
+      // @ts-expect-error Selecting a chat cannot send a message.
+      window.SenlerWidget?.selectDialog('discussion', { text: 'Hello' });
+      // @ts-expect-error Sending through settings is not supported.
+      window.SenlerWidget?.configure({ message: { text: 'Hello' } });
+      // @ts-expect-error Removed legacy API.
+      window.SenlerWidget?.createInlineTextEdit({});
+      // @ts-expect-error Settings and commands must be separate.
+      window.SenlerWidget?.open({ startNewDialog: true });`), []);
     const errors = compile(`import type { SenlerWidgetInitConfig } from '../dist/index.js';
       const config: SenlerWidgetInitConfig = { channel_id: 'test', invalidOption: true };`);
     assert.equal(errors.length, 1);
-    assert.match(ts.flattenDiagnosticMessageText(errors[0].messageText, '\n'), /invalidOption/);
+    assert.match(errors[0], /invalidOption/);
     const resolverErrors = compile(`import type { SenlerWidgetInitConfig } from '../dist/index.js';
       const config: SenlerWidgetInitConfig = { channel_id: 'test',
         resolveRuntime(context) {
           context.dialogs.count = 5;
-          return { lang: 'ru', message: { text: 'not a presentation setting' } };
+          return { lang: 'ru', startNewDialog: true };
         } };`);
     assert.equal(resolverErrors.length, 2);
-    assert.match(resolverErrors.map((error) => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n'), /read-only/);
+    assert.match(resolverErrors.join('\n'), /read-only/);
     const asyncErrors = compile(`import type { SenlerWidgetInitConfig } from '../dist/index.js';
       const config: SenlerWidgetInitConfig = { channel_id: 'test', resolveRuntime: async () => ({ lang: 'ru' }) };`);
     assert.equal(asyncErrors.length, 1);

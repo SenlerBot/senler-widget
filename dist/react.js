@@ -1,8 +1,12 @@
 "use client";
-import { createContext, createElement, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { createContext, createElement, useContext, useEffect, useMemo, useState, useSyncExternalStore, } from "react";
 import { createSenlerWidgetSession } from "./session.js";
-function createWidgetStore({ src, config, timeoutMs, nonce }) {
-    const initial = { status: config ? "loading" : "idle", api: null, error: null };
+function createWidgetStore({ src, config, timeoutMs, nonce, }) {
+    const initial = {
+        status: config ? "loading" : "idle",
+        api: null,
+        error: null,
+    };
     let state = initial;
     const listeners = new Set();
     const setState = (next) => {
@@ -13,19 +17,35 @@ function createWidgetStore({ src, config, timeoutMs, nonce }) {
         if (!config)
             return;
         let active = true;
+        let unsubscribeDestroy;
         setState(initial);
         const fail = (error) => {
             if (active)
-                setState({ status: "failed", api: null, error: error instanceof Error ? error : new Error(String(error)) });
+                setState({
+                    status: "failed",
+                    api: null,
+                    error: error instanceof Error ? error : new Error(String(error)),
+                });
         };
         try {
-            const session = createSenlerWidgetSession({ src, config, timeoutMs, nonce });
+            const session = createSenlerWidgetSession({
+                src,
+                config,
+                timeoutMs,
+                nonce,
+            });
             void session.ready.then((api) => {
-                if (active)
+                if (active) {
+                    unsubscribeDestroy = api.on("destroy", () => {
+                        if (active)
+                            setState({ status: "idle", api: null, error: null });
+                    });
                     setState({ status: "ready", api, error: null });
+                }
             }, fail);
             return () => {
                 active = false;
+                unsubscribeDestroy?.();
                 session.destroy();
             };
         }
@@ -39,24 +59,26 @@ function createWidgetStore({ src, config, timeoutMs, nonce }) {
         getServerSnapshot: () => initial,
         subscribe: (listener) => {
             listeners.add(listener);
-            return () => { listeners.delete(listener); };
+            return () => {
+                listeners.delete(listener);
+            };
         },
     };
 }
 /** Owns initialization and cleanup, including React StrictMode and delayed script loads. */
-export function useSenlerWidgetController({ src, config, timeoutMs, nonce, retryKey }) {
+export function useSenlerWidgetController({ src, config, timeoutMs, nonce, retryKey, }) {
     const store = useMemo(() => createWidgetStore({ src, config, timeoutMs, nonce, retryKey }), [src, config, timeoutMs, nonce, retryKey]);
     const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
     useEffect(() => store.start(), [store]);
     return state;
 }
 const WidgetContext = createContext(null);
-export function SenlerWidgetProvider({ children, runtime, ...options }) {
+export function SenlerWidgetProvider({ children, settings, ...options }) {
     const state = useSenlerWidgetController(options);
     useEffect(() => {
-        if (runtime)
-            state.api?.updateRuntime(runtime);
-    }, [state.api, runtime]);
+        if (settings)
+            state.api?.configure(settings);
+    }, [state.api, settings]);
     return createElement(WidgetContext.Provider, { value: state }, children);
 }
 /** Access the nearest provider. One-shot commands (open/message) use the returned API. */
@@ -69,6 +91,8 @@ export function useSenlerWidget() {
 /** Embedded widget with a React-owned container. Children can consume useSenlerWidget(). */
 export function SenlerWidget({ config, containerProps, children, ...options }) {
     const [container, setContainer] = useState(null);
-    const embeddedConfig = useMemo(() => config && container ? { ...config, container, display_mode: "embedded" } : null, [config, container]);
+    const embeddedConfig = useMemo(() => config && container
+        ? { ...config, container, display_mode: "embedded" }
+        : null, [config, container]);
     return createElement(SenlerWidgetProvider, { ...options, config: embeddedConfig }, createElement("div", { ...containerProps, ref: setContainer }), children);
 }
