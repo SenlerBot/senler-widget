@@ -1,10 +1,9 @@
 /** Public host-page API. It has no dependency on React or the Senler API SDK. */
 import type { SenlerWidgetInitializationError } from "./initialization.js";
+import type { SenlerWidgetClientMethods } from "./clientTypes.js";
 import type {
-  WIDGET_INLINE_TEXT_EDIT_STATUS,
   WIDGET_PAGE_ELEMENT_ACTIONS,
   WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES,
-  WIDGET_RUNTIME_MESSAGE_RESULT_STATUS,
 } from "./contract.js";
 export type SenlerWidgetLanguage = "ru" | "en" | "auto";
 export type SenlerWidgetThemeMode = "light" | "dark" | "auto";
@@ -23,6 +22,8 @@ export interface SenlerWidgetContextItem {
   id: string;
   kind: string;
   role: SenlerWidgetContextItemRole;
+  /** Hide this item in the widget UI while preserving it in storage and AI context. Defaults to false. */
+  hidden?: boolean;
   display: {
     label: string;
     subtitle?: string;
@@ -228,7 +229,7 @@ export type SenlerWidgetRuntimeResolver = (
   // Reject commands even when the callback also returns valid settings.
   [
     Key in Exclude<
-      keyof SenlerWidgetRuntimeConfig,
+      keyof SenlerWidgetRuntimeConfig | keyof SenlerWidgetClientMethods,
       keyof SenlerWidgetResolvedRuntimeConfig
     >
   ]?: never;
@@ -244,6 +245,8 @@ export interface SenlerWidgetInitConfig {
   lang?: SenlerWidgetLanguage;
   display_mode?: SenlerWidgetDisplayMode;
   button_only?: boolean;
+  /** Runs the authenticated SDK without rendering the ready-made chat. Immutable. */
+  headless?: boolean;
   container?: string | Element;
   /** Whether the host shows the widget's container. Defaults to true; does not open the panel. */
   surfaceVisible?: boolean;
@@ -260,12 +263,6 @@ export interface SenlerWidgetInitConfig {
   debug?: boolean;
 }
 
-export interface SenlerWidgetRuntimeMessage {
-  text: string;
-  requestId?: string;
-  startNewDialog?: boolean;
-  autoSend?: boolean;
-}
 export interface SenlerWidgetRuntimeConfig {
   /** Report a host-controlled panel/tab's visibility without reinitializing or pausing the widget. */
   surfaceVisible?: boolean;
@@ -278,110 +275,28 @@ export interface SenlerWidgetRuntimeConfig {
   shell?: SenlerWidgetShellConfig;
   customActions?: Record<string, SenlerWidgetCustomActionDefinition>;
   customActionsLanguage?: "ru" | "en";
-  autoExecuteCustomActionNames?: string[];
   dialogId?: string;
-  startNewDialog?: boolean;
   focusInput?: boolean;
   pageContextItems?: SenlerWidgetContextItem[];
   contextItems?: SenlerWidgetContextItem[];
-  message?: SenlerWidgetRuntimeMessage;
 }
-/** Persistent props only. Send messages and navigation commands through the API. */
-export type SenlerWidgetPersistentRuntimeConfig = Pick<
-  SenlerWidgetRuntimeConfig,
-  | "surfaceVisible"
-  | "welcome"
-  | "lang"
-  | "theme_mode"
-  | "border_radius"
-  | "shell"
-  | "customActions"
-  | "customActionsLanguage"
-  | "autoExecuteCustomActionNames"
-  | "pageContextItems"
->;
-
-export interface SenlerWidgetInlineTextEditPreview {
-  fieldId: string;
-  sourceText: string;
-  replacementText: string;
-  selectedText: string;
-  selectedTextReplacement: string;
-  summary?: string;
-}
-export type SenlerWidgetInlineTextEditStatus =
-  (typeof WIDGET_INLINE_TEXT_EDIT_STATUS)[keyof typeof WIDGET_INLINE_TEXT_EDIT_STATUS];
-export type SenlerWidgetInlineTextEditScope = "selection" | "field";
-export interface SenlerWidgetInlineTextEditStatusDetail {
-  status: SenlerWidgetInlineTextEditStatus;
-  requestId?: string;
-  dialogId?: string;
-  preview?: SenlerWidgetInlineTextEditPreview;
-  error?: Error;
-}
-export interface SenlerWidgetInlineTextEditConfig {
-  fieldId: string;
-  fieldLabel: string;
-  getValue: () => string;
-  getSelection?: () => string | { text: string };
-  contextItems?: SenlerWidgetContextItem[];
-  getContextItems?: () => SenlerWidgetContextItem[];
-  selectedTextLabel?: string;
-  fieldScopeLabel?: string;
-  taskLabel?: string;
-  taskSubtitle?: string;
-  taskInstruction?: string;
-  onStatusChange?: (detail: SenlerWidgetInlineTextEditStatusDetail) => void;
-  onDialogIdChange?: (dialogId: string) => void;
-  onPreview: (preview: SenlerWidgetInlineTextEditPreview) => void;
-  onError?: (error: Error) => void;
-}
-export interface SenlerWidgetInlineTextEditAskRequest {
-  text: string;
-  actionLabel?: string;
-  selectedText?: string;
-  scope?: SenlerWidgetInlineTextEditScope;
-}
-export interface SenlerWidgetInlineTextEditOpenChatRequest {
-  selectedText?: string;
-  scope?: SenlerWidgetInlineTextEditScope;
-}
-export interface SenlerWidgetInlineTextEditController {
-  ask(
-    request: string | SenlerWidgetInlineTextEditAskRequest,
-  ): string | undefined;
-  openChat(request?: SenlerWidgetInlineTextEditOpenChatRequest): void;
-  getDialogId(): string | null;
-  destroy(): void;
-}
-
-export interface SenlerWidgetApi {
+export interface SenlerWidgetApi extends SenlerWidgetClientMethods {
   readonly runtimeProtocolVersion: number;
   init(config: SenlerWidgetInitConfig): void;
-  open(config?: SenlerWidgetRuntimeConfig): void;
+  create(config: SenlerWidgetInitConfig): SenlerWidgetInstanceApi;
+  open(): void;
   close(): void;
   toggle(): void;
   isOpen(): boolean;
-  selectDialog(dialogId: string): void;
   setPageContext(items: SenlerWidgetContextItem[]): void;
-  updateRuntime(config: SenlerWidgetRuntimeConfig): void;
   /** Re-evaluate resolveRuntime after host-page conditions change. */
   refreshRuntime(): void;
-  createInlineTextEdit(
-    config: SenlerWidgetInlineTextEditConfig,
-  ): SenlerWidgetInlineTextEditController;
   destroy(): void;
 }
 
-export interface SenlerWidgetRuntimeMessageResult {
-  request_id: string;
-  status: (typeof WIDGET_RUNTIME_MESSAGE_RESULT_STATUS)[keyof typeof WIDGET_RUNTIME_MESSAGE_RESULT_STATUS];
-  dialog_id?: string;
-  error_message?: string;
-}
+export type SenlerWidgetInstanceApi = Omit<SenlerWidgetApi, "init" | "create">;
 export interface SenlerWidgetEventMap {
   "senler-widget:collapse-request": SenlerWidgetCollapseDetail;
   "senler-widget:mobile-edge-swipe": SenlerWidgetMobileEdgeSwipeDetail;
   "senler-widget:credit-purchase-requested": SenlerWidgetLeadCreditPurchaseRequestDetail;
-  "senler-widget:runtime-message-result": SenlerWidgetRuntimeMessageResult;
 }

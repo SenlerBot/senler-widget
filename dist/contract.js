@@ -1,4 +1,4 @@
-export const SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION = 4;
+export const SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION = 10;
 export const WIDGET_PAGE_ELEMENT_ACTIONS = Object.freeze([
     "highlight",
     "scroll_to",
@@ -15,24 +15,6 @@ export const WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES = Object.freeze([
     "failed",
     "blocked",
 ]);
-export const WIDGET_RUNTIME_MESSAGE_RESULT_STATUS = Object.freeze({
-    ACCEPTED: "accepted",
-    SENDING: "sending",
-    MESSAGE_SENT: "message_sent",
-    ANSWERED: "answered",
-    MESSAGE_SEND_FAILED: "message_send_failed",
-    MESSAGE_ANSWER_FAILED: "message_answer_failed",
-    PREVIEW_FAILED: "preview_failed",
-});
-export const WIDGET_INLINE_TEXT_EDIT_STATUS = Object.freeze({
-    SENDING: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.SENDING,
-    MESSAGE_SENT: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.MESSAGE_SENT,
-    ANSWERED: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.ANSWERED,
-    MESSAGE_SEND_FAILED: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.MESSAGE_SEND_FAILED,
-    MESSAGE_ANSWER_FAILED: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.MESSAGE_ANSWER_FAILED,
-    PREVIEW_READY: "preview_ready",
-    PREVIEW_FAILED: WIDGET_RUNTIME_MESSAGE_RESULT_STATUS.PREVIEW_FAILED,
-});
 // The loader consumes these lists; Record requires every public field exactly once.
 export const WIDGET_PUBLIC_INIT_CONFIG_FIELDS = {
     channel_id: true,
@@ -43,6 +25,7 @@ export const WIDGET_PUBLIC_INIT_CONFIG_FIELDS = {
     lang: true,
     display_mode: true,
     button_only: true,
+    headless: true,
     container: true,
     surfaceVisible: true,
     shell: true,
@@ -66,13 +49,10 @@ export const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS = {
     shell: true,
     customActions: true,
     customActionsLanguage: true,
-    autoExecuteCustomActionNames: true,
     dialogId: true,
-    startNewDialog: true,
     focusInput: true,
     pageContextItems: true,
     contextItems: true,
-    message: true,
 };
 export const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS = {
     welcome: true,
@@ -80,12 +60,6 @@ export const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS = {
     theme_mode: true,
     border_radius: true,
     shell: true,
-};
-export const WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS = {
-    text: true,
-    requestId: true,
-    startNewDialog: true,
-    autoSend: true,
 };
 export const WIDGET_PUBLIC_USER_FIELDS = {
     external_id: true,
@@ -114,6 +88,33 @@ export const WIDGET_PUBLIC_PAGE_ELEMENT_ACTION_FIELDS = {
     navigate: true,
 };
 export const WIDGET_PUBLIC_API_INSTANCE_METHODS = {
+    getSettings: true,
+    getDialogs: true,
+    getMessages: true,
+    getDialogState: true,
+    getWelcome: true,
+    getScheduledActions: true,
+    cancelScheduledAction: true,
+    subscribeDialog: true,
+    markRead: true,
+    setTyping: true,
+    clickButton: true,
+    updateQueuedQuestion: true,
+    cancelQueuedQuestion: true,
+    sendQueuedQuestion: true,
+    updateLead: true,
+    setDraft: true,
+    uploadFile: true,
+    resetSession: true,
+    getOrCreateDialog: true,
+    ask: true,
+    configure: true,
+    setContext: true,
+    setAnalytics: true,
+    startNewDialog: true,
+    createTextEdit: true,
+    registerAction: true,
+    on: true,
     open: true,
     close: true,
     toggle: true,
@@ -121,9 +122,7 @@ export const WIDGET_PUBLIC_API_INSTANCE_METHODS = {
     destroy: true,
     selectDialog: true,
     setPageContext: true,
-    updateRuntime: true,
     refreshRuntime: true,
-    createInlineTextEdit: true,
 };
 export const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS = {
     technical: true,
@@ -158,7 +157,6 @@ export const WIDGET_PUBLIC_FEATURE_FIELDS = {
 export const WIDGET_PUBLIC_INIT_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_INIT_CONFIG_FIELDS));
 export const WIDGET_PUBLIC_RUNTIME_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS));
 export const WIDGET_RESOLVED_RUNTIME_CONFIG_KEYS = Object.freeze(Object.keys(WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS));
-export const WIDGET_PUBLIC_RUNTIME_MESSAGE_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS));
 export const WIDGET_PUBLIC_USER_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_USER_FIELDS));
 export const WIDGET_PUBLIC_SHELL_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_SHELL_FIELDS));
 export const WIDGET_PUBLIC_CUSTOM_ACTION_KEYS = Object.freeze(Object.keys(WIDGET_PUBLIC_CUSTOM_ACTION_FIELDS));

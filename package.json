@@ -1,6 +1,6 @@
 {
   "name": "@senlerio/widget",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "Typed Senler chat widget SDK with an optional React integration",
   "license": "MIT",
   "type": "module",
@@ -32,6 +32,11 @@
       "types": "./dist/contract.d.ts",
       "import": "./dist/contract.js",
       "default": "./dist/contract.js"
+    },
+    "./appearance": {
+      "types": "./dist/appearance.d.ts",
+      "import": "./dist/appearance.js",
+      "default": "./dist/appearance.js"
     },
     "./package.json": "./package.json"
   },

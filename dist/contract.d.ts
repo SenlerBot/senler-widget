@@ -1,24 +1,6 @@
-export declare const SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION = 4;
+export declare const SENLER_WIDGET_RUNTIME_PROTOCOL_VERSION = 10;
 export declare const WIDGET_PAGE_ELEMENT_ACTIONS: readonly ["highlight", "scroll_to", "focus", "click", "fill", "clear", "select", "toggle"];
 export declare const WIDGET_PAGE_ELEMENT_ACTION_RESULT_STATUSES: readonly ["success", "not_found", "failed", "blocked"];
-export declare const WIDGET_RUNTIME_MESSAGE_RESULT_STATUS: Readonly<{
-    ACCEPTED: "accepted";
-    SENDING: "sending";
-    MESSAGE_SENT: "message_sent";
-    ANSWERED: "answered";
-    MESSAGE_SEND_FAILED: "message_send_failed";
-    MESSAGE_ANSWER_FAILED: "message_answer_failed";
-    PREVIEW_FAILED: "preview_failed";
-}>;
-export declare const WIDGET_INLINE_TEXT_EDIT_STATUS: Readonly<{
-    SENDING: "sending";
-    MESSAGE_SENT: "message_sent";
-    ANSWERED: "answered";
-    MESSAGE_SEND_FAILED: "message_send_failed";
-    MESSAGE_ANSWER_FAILED: "message_answer_failed";
-    PREVIEW_READY: "preview_ready";
-    PREVIEW_FAILED: "preview_failed";
-}>;
 export declare const WIDGET_PUBLIC_INIT_CONFIG_FIELDS: {
     channel_id: true;
     user: true;
@@ -28,6 +10,7 @@ export declare const WIDGET_PUBLIC_INIT_CONFIG_FIELDS: {
     lang: true;
     display_mode: true;
     button_only: true;
+    headless: true;
     container: true;
     surfaceVisible: true;
     shell: true;
@@ -51,13 +34,10 @@ export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_FIELDS: {
     shell: true;
     customActions: true;
     customActionsLanguage: true;
-    autoExecuteCustomActionNames: true;
     dialogId: true;
-    startNewDialog: true;
     focusInput: true;
     pageContextItems: true;
     contextItems: true;
-    message: true;
 };
 export declare const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS: {
     welcome: true;
@@ -65,12 +45,6 @@ export declare const WIDGET_RESOLVED_RUNTIME_CONFIG_FIELDS: {
     theme_mode: true;
     border_radius: true;
     shell: true;
-};
-export declare const WIDGET_PUBLIC_RUNTIME_MESSAGE_FIELDS: {
-    text: true;
-    requestId: true;
-    startNewDialog: true;
-    autoSend: true;
 };
 export declare const WIDGET_PUBLIC_USER_FIELDS: {
     external_id: true;
@@ -99,6 +73,33 @@ export declare const WIDGET_PUBLIC_PAGE_ELEMENT_ACTION_FIELDS: {
     navigate: true;
 };
 export declare const WIDGET_PUBLIC_API_INSTANCE_METHODS: {
+    getSettings: true;
+    getDialogs: true;
+    getMessages: true;
+    getDialogState: true;
+    getWelcome: true;
+    getScheduledActions: true;
+    cancelScheduledAction: true;
+    subscribeDialog: true;
+    markRead: true;
+    setTyping: true;
+    clickButton: true;
+    updateQueuedQuestion: true;
+    cancelQueuedQuestion: true;
+    sendQueuedQuestion: true;
+    updateLead: true;
+    setDraft: true;
+    uploadFile: true;
+    resetSession: true;
+    getOrCreateDialog: true;
+    ask: true;
+    configure: true;
+    setContext: true;
+    setAnalytics: true;
+    startNewDialog: true;
+    createTextEdit: true;
+    registerAction: true;
+    on: true;
     open: true;
     close: true;
     toggle: true;
@@ -106,9 +107,7 @@ export declare const WIDGET_PUBLIC_API_INSTANCE_METHODS: {
     destroy: true;
     selectDialog: true;
     setPageContext: true;
-    updateRuntime: true;
     refreshRuntime: true;
-    createInlineTextEdit: true;
 };
 export declare const WIDGET_PUBLIC_CONTEXT_ITEM_ROLE_FIELDS: {
     technical: true;
@@ -143,7 +142,6 @@ export declare const WIDGET_PUBLIC_FEATURE_FIELDS: {
 export declare const WIDGET_PUBLIC_INIT_CONFIG_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_RUNTIME_CONFIG_KEYS: readonly string[];
 export declare const WIDGET_RESOLVED_RUNTIME_CONFIG_KEYS: readonly string[];
-export declare const WIDGET_PUBLIC_RUNTIME_MESSAGE_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_USER_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_SHELL_KEYS: readonly string[];
 export declare const WIDGET_PUBLIC_CUSTOM_ACTION_KEYS: readonly string[];
